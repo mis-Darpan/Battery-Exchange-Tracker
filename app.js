@@ -112,7 +112,7 @@ function renderTable() {
     data = data.filter(r => [
       "Forwarded to Production",
       "Dispatched by Production",
-      "Received from Repair"
+      "Sent to Production"
     ].includes(r["Status"]));
   }
 
@@ -207,12 +207,12 @@ function getActions(row) {
       btns += ` <button class="action-btn ab-dispatch" onclick='openUpdate("${id}","Dispatched by Repair")'>Dispatch</button>`;
       btns += ` <button class="action-btn ab-forward" onclick='openUpdate("${id}","Forwarded to Production")'>Stock Nahi →</button>`;
     }
-    // After battery received — Repair Executive handles it
-    if (s === "Received" && dispBy === "Repair Executive") {
+    // Dono cases mein (Repair ya Production dispatched) — battery Repair ke paas aati hai
+    if (s === "Received") {
       btns += ` <button class="action-btn ab-repair" onclick='openUpdate("${id}","Under Repair")'>Start Repair</button>`;
     }
     if (s === "Under Repair") {
-      btns += ` <button class="action-btn ab-sendprod" onclick='openUpdate("${id}","Sent to Production")'>Send to Production</button>`;
+      btns += ` <button class="action-btn ab-sendprod" onclick='openUpdate("${id}","Sent to Production")'>Repair Done → Production</button>`;
     }
   }
 
@@ -221,12 +221,9 @@ function getActions(row) {
     if (s === "Forwarded to Production") {
       btns += ` <button class="action-btn ab-prodispatch" onclick='openUpdate("${id}","Dispatched by Production")'>Dispatch</button>`;
     }
-    // After battery received — goes to Repair first if dispatched by Production
-    if (s === "Received" && dispBy === "Production Executive") {
-      btns += ` <button class="action-btn ab-sendrepair" onclick='openUpdate("${id}","Received from Repair")'>Send to Repair</button>`;
-    }
+    // Repair se aayi battery Production receive karta hai → Close
     if (s === "Sent to Production") {
-      btns += ` <button class="action-btn ab-received" onclick='openUpdate("${id}","Closed")'>Mark Done</button>`;
+      btns += ` <button class="action-btn ab-received" onclick='openUpdate("${id}","Closed")'>Mark Closed</button>`;
     }
   }
 
