@@ -212,7 +212,13 @@ function getActions(row) {
       btns += ` <button class="action-btn ab-repair" onclick='openUpdate("${id}","Under Repair")'>Start Repair</button>`;
     }
     if (s === "Under Repair") {
-      btns += ` <button class="action-btn ab-sendprod" onclick='openUpdate("${id}","Sent to Production")'>Repair Done → Production</button>`;
+      // Dispatched by Repair → repair mein hi rahi → Closed
+      // Dispatched by Production → production ko di → Closed
+      if (dispBy === "Repair Executive") {
+        btns += ` <button class="action-btn ab-received" onclick='openUpdate("${id}","Closed")'>Repair Done → Close</button>`;
+      } else {
+        btns += ` <button class="action-btn ab-sendprod" onclick='openUpdate("${id}","Sent to Production")'>Repair Done → Production</button>`;
+      }
     }
   }
 
