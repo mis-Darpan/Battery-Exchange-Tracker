@@ -12,28 +12,24 @@
 <div id="login-screen">
   <div class="login-logo">
     <h1>⚡ Battery Exchange Tracker</h1>
-    <p>Select your profile to continue</p>
+    <p>Select your role to continue</p>
   </div>
   <div class="login-cards">
-    <div class="login-card" onclick="login('Sukhpal','Service Executive')">
+    <div class="login-card" onclick="login('Service Executive')">
       <div class="icon">👩‍💼</div>
-      <div class="name">Sukhpal</div>
-      <div class="role">Service Executive</div>
+      <div class="name">Service Executive</div>
     </div>
-    <div class="login-card" onclick="login('Mandeep','Repair Executive')">
+    <div class="login-card" onclick="login('Repair Executive')">
       <div class="icon">🔧</div>
-      <div class="name">Mandeep</div>
-      <div class="role">Repair Executive</div>
+      <div class="name">Repair Executive</div>
     </div>
-    <div class="login-card" onclick="login('Production','Production Executive')">
+    <div class="login-card" onclick="login('Production Executive')">
       <div class="icon">🏭</div>
-      <div class="name">Production</div>
-      <div class="role">Production Executive</div>
+      <div class="name">Production Executive</div>
     </div>
-    <div class="login-card" onclick="login('Admin','Administrator')">
+    <div class="login-card" onclick="login('Admin')">
       <div class="icon">🛡️</div>
       <div class="name">Admin</div>
-      <div class="role">Full Access</div>
     </div>
   </div>
 </div>
@@ -57,7 +53,7 @@
       <div class="stat-card s-open"><div class="slabel">Open</div><div class="svalue" id="s-open">—</div></div>
       <div class="stat-card s-dispatched"><div class="slabel">Dispatched</div><div class="svalue" id="s-dispatched">—</div></div>
       <div class="stat-card s-pickup"><div class="slabel">Pickup Arranged</div><div class="svalue" id="s-pickup">—</div></div>
-      <div class="stat-card s-confirmed"><div class="slabel">Pickup Confirmed</div><div class="svalue" id="s-confirmed">—</div></div>
+      <div class="stat-card s-confirmed"><div class="slabel">Received</div><div class="svalue" id="s-confirmed">—</div></div>
       <div class="stat-card s-closed"><div class="slabel">Closed</div><div class="svalue" id="s-closed">—</div></div>
     </div>
 
@@ -109,11 +105,10 @@
         <div class="form-group"><label>Battery Category *</label>
           <select id="f-cat">
             <option value="">Select</option>
-            <option>E-Rickshaw</option>
-            <option>E-Bike</option>
-            <option>Solar</option>
+            <option>2 Wheeler</option>
+            <option>3 Wheeler</option>
             <option>Inverter</option>
-            <option>Other</option>
+            <option>Solar</option>
           </select>
         </div>
       </div>
@@ -130,7 +125,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('new-modal')">Cancel</button>
-      <button class="btn-primary" onclick="submitNew()">Save Complaint</button>
+      <button class="btn-primary" id="submit-btn" onclick="submitNew()">Save Complaint</button>
     </div>
   </div>
 </div>
@@ -165,7 +160,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-
 <script src="app.js"></script>
 </body>
 </html>
