@@ -1,22 +1,20 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx1NMTtX8mOPOShzs7ku3ccxcdP01PrVN5LsS5rkrB_HPWO0WeLAHla-uYuVVrkzxZlDQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx-3ChtWLXEOsd-8K5KShOG375XV0wV9emDPdbo09htimRFTom-KdxjB6q8bb7LbFNw6Q/exec";
 
 let allData = [];
 let currentUser = null;
-let currentRole = null;
 let currentFilter = "All";
 let searchQuery = "";
 let pendingUpdate = null;
 
 // ---- LOGIN ----
-function login(name, role) {
-  currentUser = name;
-  currentRole = role;
+function login(role) {
+  currentUser = role;
   document.getElementById("login-screen").style.display = "none";
   document.getElementById("app-screen").style.display = "block";
-  document.getElementById("user-label").textContent = `${name} · ${role}`;
+  document.getElementById("user-label").textContent = role;
 
   const wrap = document.getElementById("new-btn-wrap");
-  if (name === "Sukhpal" || name === "Admin") {
+  if (role === "Service Executive" || role === "Admin") {
     wrap.innerHTML = `<button class="btn-primary" onclick="openNewModal()">+ New Complaint</button>`;
   } else {
     wrap.innerHTML = "";
@@ -28,7 +26,6 @@ function login(name, role) {
 
 function logout() {
   currentUser = null;
-  currentRole = null;
   allData = [];
   document.getElementById("login-screen").style.display = "flex";
   document.getElementById("app-screen").style.display = "none";
@@ -38,6 +35,7 @@ function logout() {
 async function loadData() {
   document.getElementById("loading").style.display = "block";
   document.getElementById("main-table").style.display = "none";
+  document.getElementById("empty-state").style.display = "none";
   try {
     const res = await fetch(`${API_URL}?action=getAll`);
     const json = await res.json();
@@ -59,7 +57,7 @@ async function loadStats() {
     document.getElementById("s-open").textContent = s.open;
     document.getElementById("s-dispatched").textContent = s.dispatched;
     document.getElementById("s-pickup").textContent = s.pickupArranged;
-    document.getElementById("s-confirmed").textContent = s.pickupConfirmed;
+    document.getElementById("s-confirmed").textContent = s.received;
     document.getElementById("s-closed").textContent = s.closed;
   } catch (e) {}
 }
@@ -69,17 +67,28 @@ function renderTable() {
   let data = allData;
 
   // Role-based filter
-  if (currentUser === "Mandeep") {
-    data = data.filter(r => ["Open", "Dispatched by Repair", "Forwarded to Production", "Pickup Confirmed"].includes(r["Status"]));
-  } else if (currentUser === "Production") {
-    data = data.filter(r => ["Forwarded to Production", "Dispatched by Production"].includes(r["Status"]));
+  if (currentUser === "Repair Executive") {
+    data = data.filter(r => [
+      "Open",
+      "Dispatched by Repair",
+      "Forwarded to Production",
+      "Received",
+      "Under Repair",
+      "Sent to Production"
+    ].includes(r["Status"]));
+  } else if (currentUser === "Production Executive") {
+    data = data.filter(r => [
+      "Forwarded to Production",
+      "Dispatched by Production",
+      "Received from Repair"
+    ].includes(r["Status"]));
   }
 
   // Status filter
   if (currentFilter !== "All") {
     if (currentFilter === "Open") data = data.filter(r => r["Status"] === "Open");
     if (currentFilter === "Dispatched") data = data.filter(r => ["Dispatched by Repair", "Dispatched by Production", "Forwarded to Production"].includes(r["Status"]));
-    if (currentFilter === "Pickup") data = data.filter(r => ["Pickup Arranged", "Pickup Confirmed"].includes(r["Status"]));
+    if (currentFilter === "Pickup") data = data.filter(r => ["Pickup Arranged", "Received"].includes(r["Status"]));
     if (currentFilter === "Closed") data = data.filter(r => r["Status"] === "Closed");
   }
 
@@ -135,7 +144,10 @@ function getStatusBadge(s) {
     "Forwarded to Production": "b-forwarded",
     "Dispatched by Production": "b-production",
     "Pickup Arranged": "b-pickup",
-    "Pickup Confirmed": "b-confirmed",
+    "Received": "b-confirmed",
+    "Under Repair": "b-underrepair",
+    "Sent to Production": "b-senttoprod",
+    "Received from Repair": "b-recfromrepair",
     "Closed": "b-closed"
   };
   return `<span class="badge ${map[s] || "b-open"}">${s || "Open"}</span>`;
@@ -144,30 +156,45 @@ function getStatusBadge(s) {
 function getActions(row) {
   const s = row["Status"];
   const id = row["ID"];
+  const dispBy = row["Dispatched By"] || "";
   let btns = `<button class="action-btn ab-view" onclick='openDetail("${id}")'>View</button>`;
 
-  if (currentUser === "Mandeep" || currentUser === "Admin") {
-    if (s === "Open") {
-      btns += ` <button class="action-btn ab-dispatch" onclick='openUpdate("${id}","Dispatched by Repair")'>Dispatch</button>`;
-      btns += ` <button class="action-btn ab-forward" onclick='openUpdate("${id}","Forwarded to Production")'>Stock Nahi →</button>`;
-    }
-    if (s === "Pickup Confirmed") {
-      btns += ` <button class="action-btn ab-received" onclick='openUpdate("${id}","Closed")'>Mark Received</button>`;
-    }
-  }
-
-  if (currentUser === "Production" || currentUser === "Admin") {
-    if (s === "Forwarded to Production") {
-      btns += ` <button class="action-btn ab-prodispatch" onclick='openUpdate("${id}","Dispatched by Production")'>Dispatch</button>`;
-    }
-  }
-
-  if (currentUser === "Sukhpal" || currentUser === "Admin") {
+  // SERVICE EXECUTIVE
+  if (currentUser === "Service Executive" || currentUser === "Admin") {
     if (s === "Dispatched by Repair" || s === "Dispatched by Production") {
       btns += ` <button class="action-btn ab-arrange" onclick='openUpdate("${id}","Pickup Arranged")'>Arrange Pickup</button>`;
     }
     if (s === "Pickup Arranged") {
-      btns += ` <button class="action-btn ab-confirm" onclick='openUpdate("${id}","Pickup Confirmed")'>Pickup Done ✓</button>`;
+      btns += ` <button class="action-btn ab-confirm" onclick='openUpdate("${id}","Received")'>Mark Received</button>`;
+    }
+  }
+
+  // REPAIR EXECUTIVE
+  if (currentUser === "Repair Executive" || currentUser === "Admin") {
+    if (s === "Open") {
+      btns += ` <button class="action-btn ab-dispatch" onclick='openUpdate("${id}","Dispatched by Repair")'>Dispatch</button>`;
+      btns += ` <button class="action-btn ab-forward" onclick='openUpdate("${id}","Forwarded to Production")'>Stock Nahi →</button>`;
+    }
+    // After battery received — Repair Executive handles it
+    if (s === "Received" && dispBy === "Repair Executive") {
+      btns += ` <button class="action-btn ab-repair" onclick='openUpdate("${id}","Under Repair")'>Start Repair</button>`;
+    }
+    if (s === "Under Repair") {
+      btns += ` <button class="action-btn ab-sendprod" onclick='openUpdate("${id}","Sent to Production")'>Send to Production</button>`;
+    }
+  }
+
+  // PRODUCTION EXECUTIVE
+  if (currentUser === "Production Executive" || currentUser === "Admin") {
+    if (s === "Forwarded to Production") {
+      btns += ` <button class="action-btn ab-prodispatch" onclick='openUpdate("${id}","Dispatched by Production")'>Dispatch</button>`;
+    }
+    // After battery received — goes to Repair first if dispatched by Production
+    if (s === "Received" && dispBy === "Production Executive") {
+      btns += ` <button class="action-btn ab-sendrepair" onclick='openUpdate("${id}","Received from Repair")'>Send to Repair</button>`;
+    }
+    if (s === "Sent to Production") {
+      btns += ` <button class="action-btn ab-received" onclick='openUpdate("${id}","Closed")'>Mark Done</button>`;
     }
   }
 
@@ -207,6 +234,10 @@ async function submitNew() {
     return;
   }
 
+  const btn = document.getElementById("submit-btn");
+  btn.textContent = "Submitting...";
+  btn.disabled = true;
+
   try {
     const res = await fetch(API_URL, {
       method: "POST",
@@ -233,6 +264,9 @@ async function submitNew() {
     }
   } catch (e) {
     showToast("Network error", "error");
+  } finally {
+    btn.textContent = "Save Complaint";
+    btn.disabled = false;
   }
 }
 
@@ -247,8 +281,11 @@ function openUpdate(id, newStatus) {
     "Forwarded to Production": "Forward to Production",
     "Dispatched by Production": "Mark Dispatched (Production)",
     "Pickup Arranged": "Arrange Pickup",
-    "Pickup Confirmed": "Confirm Pickup Done",
-    "Closed": "Mark Defective Battery Received"
+    "Received": "Mark Battery Received",
+    "Under Repair": "Start Repair",
+    "Sent to Production": "Send to Production",
+    "Received from Repair": "Send to Repair Executive",
+    "Closed": "Mark Closed"
   };
 
   document.getElementById("u-title").textContent = titles[newStatus] || "Update";
@@ -283,17 +320,8 @@ function openUpdate(id, newStatus) {
     `;
   }
 
-  if (newStatus === "Closed") {
-    fields = `
-      <div class="form-group" style="margin-bottom:12px">
-        <label>Battery Received Kahan? *</label>
-        <select id="u-received">
-          <option value="">Select</option>
-          <option>Repair (Mandeep ke paas)</option>
-          <option>Production ko di</option>
-        </select>
-      </div>
-    `;
+  if (newStatus === "Under Repair" || newStatus === "Sent to Production" || newStatus === "Received from Repair" || newStatus === "Closed") {
+    fields = `<p style="font-size:13px;color:var(--muted);margin-bottom:12px">Confirm karo yeh step complete ho gaya hai.</p>`;
   }
 
   fields += `
@@ -304,20 +332,25 @@ function openUpdate(id, newStatus) {
   `;
 
   document.getElementById("u-fields").innerHTML = fields;
-  document.getElementById("u-confirm").onclick = confirmUpdate;
+
+  const confirmBtn = document.getElementById("u-confirm");
+  confirmBtn.textContent = "Confirm";
+  confirmBtn.disabled = false;
+  confirmBtn.onclick = confirmUpdate;
   openModal("update-modal");
 }
 
 async function confirmUpdate() {
   if (!pendingUpdate) return;
+
   const payload = {
     action: "updateStatus",
     id: pendingUpdate.id,
     newStatus: pendingUpdate.newStatus
   };
 
-  if (pendingUpdate.newStatus === "Dispatched by Repair") payload.dispatchedBy = "Mandeep";
-  if (pendingUpdate.newStatus === "Dispatched by Production") payload.dispatchedBy = "Production";
+  if (pendingUpdate.newStatus === "Dispatched by Repair") payload.dispatchedBy = "Repair Executive";
+  if (pendingUpdate.newStatus === "Dispatched by Production") payload.dispatchedBy = "Production Executive";
 
   if (pendingUpdate.newStatus === "Pickup Arranged") {
     const mode = document.getElementById("u-mode")?.value;
@@ -326,13 +359,11 @@ async function confirmUpdate() {
     payload.expectedDate = document.getElementById("u-expdate")?.value || "";
   }
 
-  if (pendingUpdate.newStatus === "Closed") {
-    const rec = document.getElementById("u-received")?.value;
-    if (!rec) { showToast("Select karo battery kahan receive hui", "error"); return; }
-    payload.receivedLocation = rec;
-  }
-
   payload.remarks = document.getElementById("u-remarks")?.value || "";
+
+  const confirmBtn = document.getElementById("u-confirm");
+  confirmBtn.textContent = "Updating...";
+  confirmBtn.disabled = true;
 
   try {
     const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
@@ -347,6 +378,9 @@ async function confirmUpdate() {
     }
   } catch (e) {
     showToast("Network error", "error");
+  } finally {
+    confirmBtn.textContent = "Confirm";
+    confirmBtn.disabled = false;
   }
 }
 
@@ -376,14 +410,14 @@ function openDetail(id) {
       <p style="font-size:13px;line-height:1.6">${row["Complaint"] || "—"}</p>
     </div>
     <div class="detail-section">
-      <h3>Replacement & Pickup</h3>
+      <h3>Replacement & Return Flow</h3>
       <div class="detail-grid">
         <div class="di"><label>Dispatched By</label><span>${row["Dispatched By"] || "—"}</span></div>
         <div class="di"><label>Dispatch Date</label><span>${row["Dispatch Date"] || "—"}</span></div>
         <div class="di"><label>Pickup Mode</label><span>${row["Pickup Mode"] || "—"}</span></div>
         <div class="di"><label>Expected Pickup</label><span>${row["Expected Pickup Date"] || "—"}</span></div>
-        <div class="di"><label>Pickup Confirmed</label><span>${row["Pickup Confirmed Date"] || "—"}</span></div>
-        <div class="di"><label>Received At</label><span>${row["Received Location"] || "—"}</span></div>
+        <div class="di"><label>Received Date</label><span>${row["Pickup Confirmed Date"] || "—"}</span></div>
+        <div class="di"><label>Received Location</label><span>${row["Received Location"] || "—"}</span></div>
       </div>
     </div>
     ${row["Remarks"] ? `<div class="detail-section"><h3>Remarks</h3><p style="font-size:13px">${row["Remarks"]}</p></div>` : ""}
@@ -401,7 +435,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ---- TOAST ----
 function showToast(msg, type = "success") {
   const t = document.getElementById("toast");
   t.textContent = msg;
