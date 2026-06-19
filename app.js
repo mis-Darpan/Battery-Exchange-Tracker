@@ -1,5 +1,37 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxygG0R2tWwYOs3O-9wAXUoHvCE5VFbyUnNCs9WQ4h5u_EyQ6HiiRpR70zfaTu77Bm9RA/exec";
 
+const PINS = {
+  "Service Executive": "1111",
+  "Repair Executive": "2222",
+  "Production Executive": "3333",
+  "Admin": "0000"
+};
+
+let pendingRole = null;
+
+// ---- PIN ----
+function askPin(role) {
+  pendingRole = role;
+  document.getElementById("pin-title").textContent = role + " — PIN";
+  document.getElementById("pin-input").value = "";
+  document.getElementById("pin-error").style.display = "none";
+  openModal("pin-modal");
+  setTimeout(() => document.getElementById("pin-input").focus(), 100);
+}
+
+function confirmPin() {
+  const entered = document.getElementById("pin-input").value.trim();
+  if (entered === PINS[pendingRole]) {
+    closeModal("pin-modal");
+    login(pendingRole);
+  } else {
+    document.getElementById("pin-error").style.display = "block";
+    document.getElementById("pin-input").value = "";
+    document.getElementById("pin-input").focus();
+  }
+}
+
+
 let allData = [];
 let currentUser = null;
 let currentFilter = "All";
