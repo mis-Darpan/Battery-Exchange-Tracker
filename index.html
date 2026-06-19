@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Battery Exchange Tracker — Litpax</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">
+    <h1>⚡ Battery Exchange Tracker</h1>
+    <p>Select your profile to continue</p>
+  </div>
+  <div class="login-cards">
+    <div class="login-card" onclick="login('Sukhpal','Service Executive')">
+      <div class="icon">👩‍💼</div>
+      <div class="name">Sukhpal</div>
+      <div class="role">Service Executive</div>
+    </div>
+    <div class="login-card" onclick="login('Mandeep','Repair Executive')">
+      <div class="icon">🔧</div>
+      <div class="name">Mandeep</div>
+      <div class="role">Repair Executive</div>
+    </div>
+    <div class="login-card" onclick="login('Production','Production Executive')">
+      <div class="icon">🏭</div>
+      <div class="name">Production</div>
+      <div class="role">Production Executive</div>
+    </div>
+    <div class="login-card" onclick="login('Admin','Administrator')">
+      <div class="icon">🛡️</div>
+      <div class="name">Admin</div>
+      <div class="role">Full Access</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <header>
+    <div class="header-left">
+      <div class="logo-dot"></div>
+      <h1>Battery Exchange Tracker</h1>
+    </div>
+    <div class="user-chip">
+      <span id="user-label">—</span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-grid">
+      <div class="stat-card s-total"><div class="slabel">Total</div><div class="svalue" id="s-total">—</div></div>
+      <div class="stat-card s-open"><div class="slabel">Open</div><div class="svalue" id="s-open">—</div></div>
+      <div class="stat-card s-dispatched"><div class="slabel">Dispatched</div><div class="svalue" id="s-dispatched">—</div></div>
+      <div class="stat-card s-pickup"><div class="slabel">Pickup Arranged</div><div class="svalue" id="s-pickup">—</div></div>
+      <div class="stat-card s-confirmed"><div class="slabel">Pickup Confirmed</div><div class="svalue" id="s-confirmed">—</div></div>
+      <div class="stat-card s-closed"><div class="slabel">Closed</div><div class="svalue" id="s-closed">—</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="filter-btn active" onclick="setFilter('All')">All</button>
+        <button class="filter-btn" onclick="setFilter('Open')">Open</button>
+        <button class="filter-btn" onclick="setFilter('Dispatched')">Dispatched</button>
+        <button class="filter-btn" onclick="setFilter('Pickup')">Pickup</button>
+        <button class="filter-btn" onclick="setFilter('Closed')">Closed</button>
+        <input class="search-box" type="text" placeholder="Search customer, serial, model..." oninput="onSearch(this.value)"/>
+      </div>
+      <div id="new-btn-wrap"></div>
+    </div>
+
+    <div class="table-wrap">
+      <div id="loading" class="loading">Loading...</div>
+      <table id="main-table" style="display:none">
+        <thead>
+          <tr>
+            <th>ID</th><th>Date</th><th>Customer</th><th>Battery</th>
+            <th>Complaint</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="eicon">📋</div>
+        <p>No entries found</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- NEW COMPLAINT MODAL -->
+<div class="modal-overlay" id="new-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>New Complaint Entry</h2>
+      <button class="modal-close" onclick="closeModal('new-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Customer Name *</label><input id="f-name" placeholder="Full name"/></div>
+        <div class="form-group"><label>Phone *</label><input id="f-phone" type="tel" placeholder="Mobile number"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>City</label><input id="f-city" placeholder="City"/></div>
+        <div class="form-group"><label>Battery Category *</label>
+          <select id="f-cat">
+            <option value="">Select</option>
+            <option>E-Rickshaw</option>
+            <option>E-Bike</option>
+            <option>Solar</option>
+            <option>Inverter</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Battery Model *</label><input id="f-model" placeholder="e.g. LPX-100AH"/></div>
+        <div class="form-group"><label>Serial No</label><input id="f-serial" placeholder="Serial number"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group full"><label>Complaint *</label><textarea id="f-complaint" placeholder="Describe the issue..."></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group full"><label>Remarks</label><input id="f-remarks" placeholder="Any notes"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('new-modal')">Cancel</button>
+      <button class="btn-primary" onclick="submitNew()">Save Complaint</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATE MODAL -->
+<div class="modal-overlay" id="update-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="u-title">Update</h2>
+      <button class="modal-close" onclick="closeModal('update-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="update-info" id="u-info"></div>
+      <div id="u-fields"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('update-modal')">Cancel</button>
+      <button class="btn-primary" id="u-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="d-title">Details</h2>
+      <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="d-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
