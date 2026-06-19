@@ -152,7 +152,7 @@ function renderTable() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><span class="cid">${row["ID"] || ""}</span></td>
-      <td>${row["Date"] || ""}</td>
+      <td>${fmtDate(row["Date"])}</td>
       <td>
         <div class="cname">${row["Customer Name"] || "—"}</div>
         <div class="cphone">${row["Phone"] || ""} ${row["City"] ? "· " + row["City"] : ""}</div>
@@ -413,46 +413,67 @@ async function confirmUpdate() {
   }
 }
 
+// ---- DATE FORMAT ----
+function fmtDate(val) {
+  if (!val) return "—";
+  const d = new Date(val);
+  if (isNaN(d)) return val;
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
+
+const FIXED_KEYS = [
+  "ID", "Date", "Status", "Customer Name", "Phone", "City",
+  "Battery Category", "Battery Model", "Serial No", "Complaint",
+  "Dispatched By", "Dispatch Date", "Pickup Mode",
+  "Expected Pickup Date", "Pickup Confirmed Date", "Received Location", "Remarks", "_row"
+];
+
 // ---- DETAIL VIEW ----
 function openDetail(id) {
   const row = allData.find(r => r["ID"] === id);
   if (!row) return;
   document.getElementById("d-title").textContent = `${row["ID"]} — Details`;
-  document.getElementById("d-body").innerHTML = `
-    <div class="detail-grid">
-      <div class="di"><label>Date</label><span>${row["Date"] || "—"}</span></div>
-      <div class="di"><label>Status</label><span>${getStatusBadge(row["Status"])}</span></div>
-      <div class="di"><label>Customer</label><span>${row["Customer Name"] || "—"}</span></div>
-      <div class="di"><label>Phone</label><span>${row["Phone"] || "—"}</span></div>
-      <div class="di"><label>City</label><span>${row["City"] || "—"}</span></div>
-    </div>
-    <div class="detail-section">
-      <h3>Battery Info</h3>
-      <div class="detail-grid">
-        <div class="di"><label>Category</label><span>${row["Battery Category"] || "—"}</span></div>
-        <div class="di"><label>Model</label><span>${row["Battery Model"] || "—"}</span></div>
-        <div class="di"><label>Serial No</label><span>${row["Serial No"] || "—"}</span></div>
-      </div>
-    </div>
-    <div class="detail-section">
-      <h3>Complaint</h3>
-      <p style="font-size:13px;line-height:1.6">${row["Complaint"] || "—"}</p>
-    </div>
-    <div class="detail-section">
-      <h3>Replacement & Return Flow</h3>
-      <div class="detail-grid">
-        <div class="di"><label>Dispatched By</label><span>${row["Dispatched By"] || "—"}</span></div>
-        <div class="di"><label>Dispatch Date</label><span>${row["Dispatch Date"] || "—"}</span></div>
-        <div class="di"><label>Pickup Mode</label><span>${row["Pickup Mode"] || "—"}</span></div>
-        <div class="di"><label>Expected Pickup</label><span>${row["Expected Pickup Date"] || "—"}</span></div>
-        <div class="di"><label>Received Date</label><span>${row["Pickup Confirmed Date"] || "—"}</span></div>
-        <div class="di"><label>Received Location</label><span>${row["Received Location"] || "—"}</span></div>
-      </div>
-    </div>
-    ${row["Remarks"] ? `<div class="detail-section"><h3>Remarks</h3><p style="font-size:13px">${row["Remarks"]}</p></div>` : ""}
-  `;
+
+  const extraKeys = Object.keys(row).filter(k => !FIXED_KEYS.includes(k));
+  let extraHtml = "";
+  if (extraKeys.length > 0) {
+    extraHtml = `<div class="detail-section"><h3>Additional Info</h3><div class="detail-grid">` +
+      extraKeys.map(k => `<div class="di"><label>${k}</label><span>${fmtDate(row[k]) || "—"}</span></div>`).join("") +
+      `</div></div>`;
+  }
+
+  document.getElementById("d-body").innerHTML =
+    `<div class="detail-grid">` +
+    `<div class="di"><label>Date</label><span>${fmtDate(row["Date"])}</span></div>` +
+    `<div class="di"><label>Status</label><span>${getStatusBadge(row["Status"])}</span></div>` +
+    `<div class="di"><label>Customer</label><span>${row["Customer Name"] || "—"}</span></div>` +
+    `<div class="di"><label>Phone</label><span>${row["Phone"] || "—"}</span></div>` +
+    `<div class="di"><label>City</label><span>${row["City"] || "—"}</span></div>` +
+    `</div>` +
+    `<div class="detail-section"><h3>Battery Info</h3><div class="detail-grid">` +
+    `<div class="di"><label>Category</label><span>${row["Battery Category"] || "—"}</span></div>` +
+    `<div class="di"><label>Model</label><span>${row["Battery Model"] || "—"}</span></div>` +
+    `<div class="di"><label>Serial No</label><span>${row["Serial No"] || "—"}</span></div>` +
+    `</div></div>` +
+    `<div class="detail-section"><h3>Complaint</h3>` +
+    `<p style="font-size:13px;line-height:1.6">${row["Complaint"] || "—"}</p></div>` +
+    `<div class="detail-section"><h3>Replacement & Return Flow</h3><div class="detail-grid">` +
+    `<div class="di"><label>Dispatched By</label><span>${row["Dispatched By"] || "—"}</span></div>` +
+    `<div class="di"><label>Dispatch Date</label><span>${fmtDate(row["Dispatch Date"])}</span></div>` +
+    `<div class="di"><label>Pickup Mode</label><span>${row["Pickup Mode"] || "—"}</span></div>` +
+    `<div class="di"><label>Expected Pickup</label><span>${fmtDate(row["Expected Pickup Date"])}</span></div>` +
+    `<div class="di"><label>Received Date</label><span>${fmtDate(row["Pickup Confirmed Date"])}</span></div>` +
+    `<div class="di"><label>Received Location</label><span>${row["Received Location"] || "—"}</span></div>` +
+    `</div></div>` +
+    extraHtml +
+    (row["Remarks"] ? `<div class="detail-section"><h3>Remarks</h3><p style="font-size:13px">${row["Remarks"]}</p></div>` : "");
+
   openModal("detail-modal");
 }
+
 
 // ---- MODAL HELPERS ----
 function openModal(id) { document.getElementById(id).classList.add("open"); }
