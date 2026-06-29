@@ -1,10 +1,10 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxygG0R2tWwYOs3O-9wAXUoHvCE5VFbyUnNCs9WQ4h5u_EyQ6HiiRpR70zfaTu77Bm9RA/exec";
 
+// Only 3 roles have PINs — Admin is handled separately via admin.html
 const PINS = {
   "Service Executive": "1111",
   "Repair Executive": "2222",
-  "Production Executive": "3333",
-  "Admin": "0000"
+  "Production Executive": "3333"
 };
 
 let pendingRole = null;
@@ -98,8 +98,6 @@ async function loadStats() {
 function renderTable() {
   let data = allData;
 
- 
-
   // Status filter
   if (currentFilter !== "All") {
     if (currentFilter === "Open") data = data.filter(r => r["Status"] === "Open");
@@ -191,13 +189,10 @@ function getActions(row) {
       btns += ` <button class="action-btn ab-dispatch" onclick='openUpdate("${id}","Dispatched by Repair")'>Dispatch</button>`;
       btns += ` <button class="action-btn ab-forward" onclick='openUpdate("${id}","Forwarded to Production")'>Stock Nahi →</button>`;
     }
-    // Dono cases mein (Repair ya Production dispatched) — battery Repair ke paas aati hai
     if (s === "Received") {
       btns += ` <button class="action-btn ab-repair" onclick='openUpdate("${id}","Under Repair")'>Start Repair</button>`;
     }
     if (s === "Under Repair") {
-      // Dispatched by Repair → repair mein hi rahi → Closed
-      // Dispatched by Production → production ko di → Closed
       if (dispBy === "Repair Executive") {
         btns += ` <button class="action-btn ab-received" onclick='openUpdate("${id}","Closed")'>Repair Done → Close</button>`;
       } else {
@@ -211,7 +206,6 @@ function getActions(row) {
     if (s === "Forwarded to Production") {
       btns += ` <button class="action-btn ab-prodispatch" onclick='openUpdate("${id}","Dispatched by Production")'>Dispatch</button>`;
     }
-    // Repair se aayi battery Production receive karta hai → Close
     if (s === "Sent to Production") {
       btns += ` <button class="action-btn ab-received" onclick='openUpdate("${id}","Closed")'>Mark Closed</button>`;
     }
@@ -463,7 +457,6 @@ function openDetail(id) {
 
   openModal("detail-modal");
 }
-
 
 // ---- MODAL HELPERS ----
 function openModal(id) { document.getElementById(id).classList.add("open"); }
