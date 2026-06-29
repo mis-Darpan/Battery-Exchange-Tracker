@@ -98,23 +98,7 @@ async function loadStats() {
 function renderTable() {
   let data = allData;
 
-  // Role-based filter
-  if (currentUser === "Repair Executive") {
-    data = data.filter(r => [
-      "Open",
-      "Dispatched by Repair",
-      "Forwarded to Production",
-      "Received",
-      "Under Repair",
-      "Sent to Production"
-    ].includes(r["Status"]));
-  } else if (currentUser === "Production Executive") {
-    data = data.filter(r => [
-      "Forwarded to Production",
-      "Dispatched by Production",
-      "Sent to Production"
-    ].includes(r["Status"]));
-  }
+ 
 
   // Status filter
   if (currentFilter !== "All") {
