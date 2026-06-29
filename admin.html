@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Battery Exchange Tracker</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- APP (auto-loads as Admin) -->
+<div id="app-screen" style="display:block">
+  <header>
+    <div class="header-left">
+      <div class="logo-dot"></div>
+      <h1>Battery Exchange Tracker</h1>
+    </div>
+    <div class="user-chip">
+      <span id="user-label">Admin</span>
+      <a href="index.html" class="logout-btn">← Back</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="stats-grid">
+      <div class="stat-card s-total"><div class="slabel">Total</div><div class="svalue" id="s-total">—</div></div>
+      <div class="stat-card s-open"><div class="slabel">Open</div><div class="svalue" id="s-open">—</div></div>
+      <div class="stat-card s-dispatched"><div class="slabel">Dispatched</div><div class="svalue" id="s-dispatched">—</div></div>
+      <div class="stat-card s-pickup"><div class="slabel">Pickup Arranged</div><div class="svalue" id="s-pickup">—</div></div>
+      <div class="stat-card s-confirmed"><div class="slabel">Received</div><div class="svalue" id="s-confirmed">—</div></div>
+      <div class="stat-card s-closed"><div class="slabel">Closed</div><div class="svalue" id="s-closed">—</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="filter-btn active" onclick="setFilter('All')">All</button>
+        <button class="filter-btn" onclick="setFilter('Open')">Open</button>
+        <button class="filter-btn" onclick="setFilter('Dispatched')">Dispatched</button>
+        <button class="filter-btn" onclick="setFilter('Pickup')">Pickup</button>
+        <button class="filter-btn" onclick="setFilter('Closed')">Closed</button>
+        <input class="search-box" type="text" placeholder="Search customer, serial, model..." oninput="onSearch(this.value)"/>
+      </div>
+      <div id="new-btn-wrap">
+        <button class="btn-primary" onclick="openNewModal()">+ New Complaint</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div id="loading" class="loading">Loading...</div>
+      <table id="main-table" style="display:none">
+        <thead>
+          <tr>
+            <th>ID</th><th>Date</th><th>Customer</th><th>Battery</th>
+            <th>Complaint</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <div class="eicon">📋</div>
+        <p>No entries found</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- NEW COMPLAINT MODAL -->
+<div class="modal-overlay" id="new-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>New Complaint Entry</h2>
+      <button class="modal-close" onclick="closeModal('new-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Customer Name *</label><input id="f-name" placeholder="Full name"/></div>
+        <div class="form-group"><label>Phone *</label><input id="f-phone" type="tel" placeholder="Mobile number"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>City</label><input id="f-city" placeholder="City"/></div>
+        <div class="form-group"><label>Battery Category *</label>
+          <select id="f-cat">
+            <option value="">Select</option>
+            <option>2 Wheeler</option>
+            <option>3 Wheeler</option>
+            <option>Inverter</option>
+            <option>Solar</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Battery Model *</label><input id="f-model" placeholder="e.g. LPX-100AH"/></div>
+        <div class="form-group"><label>Serial No</label><input id="f-serial" placeholder="Serial number"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group full"><label>Complaint *</label><textarea id="f-complaint" placeholder="Describe the issue..."></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group full"><label>Remarks</label><input id="f-remarks" placeholder="Any notes"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('new-modal')">Cancel</button>
+      <button class="btn-primary" id="submit-btn" onclick="submitNew()">Save Complaint</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATE MODAL -->
+<div class="modal-overlay" id="update-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="u-title">Update</h2>
+      <button class="modal-close" onclick="closeModal('update-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="update-info" id="u-info"></div>
+      <div id="u-fields"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('update-modal')">Cancel</button>
+      <button class="btn-primary" id="u-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="d-title">Details</h2>
+      <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="d-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+<script>
+  // Auto-login as Admin on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    currentUser = "Admin";
+    loadData();
+    loadStats();
+  });
+</script>
+</body>
+</html>
